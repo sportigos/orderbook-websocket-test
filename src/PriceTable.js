@@ -1,4 +1,3 @@
-import React, { useEffect, useState, useRef } from 'react';
 import styled from "@emotion/styled";
 import TableRow from './TableRow';
 
@@ -7,14 +6,21 @@ const TablePage = styled.div`
   padding: 8px 40px;
 `;
 
-function PriceTable({ data }) {
+function PriceTable({ type, data }) {
 
   return (
     <TablePage>
-      <TableRow type="header" value={{price: "PRICE", size: "SIZE", total: "TOTAL"}}></TableRow>
-      {data && data.map(item => (
-        <div>
-          <TableRow value={item}></TableRow>
+      <TableRow
+        type={type}
+        header={true}
+        value={{ price: "PRICE", size: "SIZE", total: "TOTAL" }}>
+      </TableRow>
+      {Object.keys(data).map(key => (
+        <div key={key}>
+          <TableRow
+            type={type}
+            value={{price: key, size: data[key].size, total: data[key].total}}>
+          </TableRow>
         </div>
       ))}
     </TablePage>

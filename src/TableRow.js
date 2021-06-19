@@ -1,45 +1,44 @@
-import React, { useEffect, useState, useRef } from 'react';
 import styled from "@emotion/styled";
 
 const TblRow = styled.div`
   display: flex;
   margin: 5px 10px;
-  flex-direction: row;
+  flex-direction: ${(p) => p.type === "ask" ? "row" : "row-reverse"};
   font-weight: bold;
-  margin-bottom: ${(p) => p.type === "header" ? "16px" : "8px"};
+  margin-bottom: ${(p) => p.header === true ? "16px" : "8px"};
   line-height: 150%;
 `;
 
 const TblCell = styled.div`
-  color: ${(p) => p.type === "header" ? "#6d7482" : p.color};
+  color: ${(p) => p.header === true ? "#6d7482" : p.color};
   flex: 1;
   text-align: right;
   line-height: 150%;
   letter-spacing: 1px;
 `;
 
-function TableRow({ type, value }) {
+function TableRow({ type, header, value }) {
 
   function numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
 
   return (
-    <TblRow type={type}>
+    <TblRow type={type} header={header}>
       <TblCell
-        type={type}
+        header={header}
         color="white">
         {numberWithCommas(value.total)}
       </TblCell>
       <TblCell
-        type={type}
+        header={header}
         color="white">
         {numberWithCommas(value.size)}
       </TblCell>
       <TblCell
-        type={type}
+        header={header}
         color="#0db57e">
-        {isNaN(parseFloat(value.price)) ? value.price : numberWithCommas(parseFloat(value.price).toFixed(2))}
+        {numberWithCommas(value.price)}
       </TblCell>
     </TblRow>
   );

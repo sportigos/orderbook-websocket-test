@@ -69,8 +69,8 @@ const Button = styled.button`
 `;
 
 function App() {
-  const [asksData, setAsksData] = useState([]);
-  const [bidsData, setBidsData] = useState([]);
+  const [asksData, setAsksData] = useState({});
+  const [bidsData, setBidsData] = useState({});
   const [isPaused, setPause] = useState(false);
   const ws = useRef(null);
 
@@ -94,23 +94,52 @@ function App() {
       if (isPaused) return;
       const message = JSON.parse(e.data);
       updateData(message);
-      // console.log("e", message);
     };
   }, [isPaused]);
 
+  let ii = 0
+
   const updateData = (data) => {
+    // console.log("e", data);
     if (data.feed === "book_ui_1_snapshot") {
-      let askData = data.asks.map(item => (
-        { price: item[0], size: item[1], total: 0 }
+      let askData = {}
+      data.asks.map(item => (
+        askData = { ...askData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
       ))
 
-      let bidData = data.bids.map(item => (
-        { price: item[0], size: item[1], total: 0 }
+      let bidData = {}
+      data.bids.map(item => (
+        bidData = { ...bidData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
       ))
 
       setAsksData(askData);
       setBidsData(bidData);
-    }
+    }/* else if (data.feed === "book_ui_1") {
+      ii++
+      if (data.bids && ii % 30 === 0) {
+        let newData = [...bidsData]
+
+        data.bids.map(item => {
+          let samepriceObj = bidsData.find(e=>e.price === item[0])
+        })
+
+
+        // let newData = bidsData.map(item => {
+        //   let obj = data.bids.find(e => e[0] === item.price)
+        //   console.log('obj', newData.length);
+        //   if (obj === undefined)
+        //     return item
+        //   else if (obj[1] === 0.0)
+        //     return item
+        //   else
+        //     return { ...item, size: obj[1] }
+        // })
+
+        // // newData = newData.filter(item => (Object.keys(item).length >= 0))
+
+        // setBidsData(newData)
+      }
+    }*/
   }
 
   return (
@@ -119,8 +148,8 @@ function App() {
         <Title>Order Book</Title>
       </TopBar>
       <MainPage>
-        <PriceTable data={asksData}></PriceTable>
-        <PriceTable data={bidsData}></PriceTable>
+        <PriceTable type="ask" data={asksData}></PriceTable>
+        <PriceTable type="bid" data={bidsData}></PriceTable>
       </MainPage>
       <BottomBar>
         <Button color={"#5741d9"}>Toggle Feed</Button>
