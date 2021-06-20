@@ -69,8 +69,8 @@ const Button = styled.button`
 `;
 
 function App() {
-  const [asksData, setAsksData] = useState({});
   const [bidsData, setBidsData] = useState({});
+  const [asksData, setAsksData] = useState({});
   const [isPaused, setPause] = useState(false);
   const ws = useRef(null);
   let updateDataList = [];
@@ -99,7 +99,7 @@ function App() {
   }, [isPaused]);
 
   useEffect(() => {
-    const interval = setInterval(funcUpdateData, 5 * 1000);
+    const interval = setInterval(funcUpdateData, 1 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -107,30 +107,22 @@ function App() {
   const funcProcData = (data) => {
     // console.log("e", data);
     if (data.feed === "book_ui_1_snapshot") {
-      let askData = {}
-      data.asks.map(item => (
-        askData = { ...askData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
-      ))
-
       let bidData = {}
       data.bids.map(item => (
         bidData = { ...bidData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
       ))
-
-      setAsksData(askData);
+      
+      let askData = {}
+      data.asks.map(item => (
+        askData = { ...askData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
+      ))
+      
       setBidsData(bidData);
+      setAsksData(askData);
     } else if (data.feed === "book_ui_1") {
       if (data.bids && data.asks) {
         updateDataList = [...updateDataList, data]
         // console.log("funcProcData: updateDataList length", updateDataList.length)
-
-        // let newData = { ...bidsData }
-
-        // data.bids.map(item => {
-        //   newData = { ...newData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
-        // })
-
-        // setBidsData(newData)
       }
     }
   }
@@ -141,11 +133,28 @@ function App() {
     // console.log("funcUpdateData: updateDataList length", updateDataList.length)
 
     let newBidsData = { ...bidsData }
+    let newAsksData = { ...asksData }
 
     dataList.map(data => {
       data.bids.map(item => {
+        newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
+      })
+
+      data.asks.map(item => {
+        newAsksData = { ...newAsksData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
       })
     })
+
+    for (var key in newBidsData) {
+      if (newBidsData[key].size == 0) delete newBidsData[key];
+    }
+
+    for (var key in newAsksData) {
+      if (newAsksData[key].size == 0) delete newAsksData[key];
+    }
+
+    setBidsData(newBidsData)
+    setAsksData(newAsksData)
   }
 
   return (
@@ -154,8 +163,8 @@ function App() {
         <Title>Order Book</Title>
       </TopBar>
       <MainPage>
-        <PriceTable type="ask" data={asksData}></PriceTable>
         <PriceTable type="bid" data={bidsData}></PriceTable>
+        <PriceTable type="ask" data={asksData}></PriceTable>
       </MainPage>
       <BottomBar>
         <Button color={"#5741d9"}>Toggle Feed</Button>
