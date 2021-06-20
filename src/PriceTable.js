@@ -3,7 +3,7 @@ import TableRow from './TableRow';
 
 const TablePage = styled.div`
   flex: 1;
-  padding: ${(p) => p.type === "bid" ? "8px 0 8px 60px" : "8px 60px 8px 0"};
+  padding: ${(p) => p.type === "bid" ? "8px 0 8px 8px" : "8px 8px 8px 0"};
 `;
 
 function PriceTable({ type, data }) {

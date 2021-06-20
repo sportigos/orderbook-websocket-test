@@ -46,7 +46,7 @@ function TableRow({ type, header, value }) {
   return (
     <TblRowWrapper type={type} header={header}>
       <Visualizer type={type} header={header} percent={value.percent}></Visualizer>
-      <TblRow>
+      <TblRow type={type} header={header}>
         <TblCell
           header={header}
           color="white">

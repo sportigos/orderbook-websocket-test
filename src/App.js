@@ -30,6 +30,8 @@ const Title = styled.p`
 `;
 
 const MainPageWrapper = styled.div`
+  display: flex;
+  flex: 1;
   background-color: #111827;
   margin: 5px 10px;
   padding: 12px 0;
@@ -105,10 +107,10 @@ function App() {
     };
   }, [isPaused]);
 
-  // useEffect(() => {
-  //   const interval = setInterval(funcUpdateData, 3 * 1000);
-  //   return () => clearInterval(interval);
-  // }, []);
+  useEffect(() => {
+    const interval = setInterval(funcUpdateData, 2 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
 
   const funcProcData = (data) => {
