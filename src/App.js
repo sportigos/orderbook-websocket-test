@@ -29,12 +29,19 @@ const Title = styled.p`
   font-weight: bold;
 `;
 
+const MainPageWrapper = styled.div`
+  background-color: #111827;
+  margin: 5px 10px;
+  padding: 12px 0;
+  border-radius: 3px;
+  overflow-x: hidden;
+  overflow-y: auto;
+`;
+
 const MainPage = styled.div`
   display: flex;
   flex: 1;
   flex-direction: row;
-  background-color: #111827;
-  margin: 5px 10px;
   border-radius: 3px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -98,27 +105,29 @@ function App() {
     };
   }, [isPaused]);
 
-  useEffect(() => {
-    const interval = setInterval(funcUpdateData, 1 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   const interval = setInterval(funcUpdateData, 3 * 1000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
 
   const funcProcData = (data) => {
     // console.log("e", data);
     if (data.feed === "book_ui_1_snapshot") {
-      let bidData = {}
+      let newBidsData = {}
       data.bids.map(item => (
-        bidData = { ...bidData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
+        newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
       ))
-      
-      let askData = {}
+
+      let newAsksData = {}
       data.asks.map(item => (
-        askData = { ...askData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
+        newAsksData = { ...newAsksData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
       ))
-      
-      setBidsData(bidData);
-      setAsksData(askData);
+
+      newBidsData = sortObj(newBidsData)
+      newAsksData = sortObj(newAsksData)
+      setBidsData(newBidsData);
+      setAsksData(newAsksData);
     } else if (data.feed === "book_ui_1") {
       if (data.bids && data.asks) {
         updateDataList = [...updateDataList, data]
@@ -153,8 +162,24 @@ function App() {
       if (newAsksData[key].size == 0) delete newAsksData[key];
     }
 
+    newBidsData = sortObj(newBidsData)
+    newAsksData = sortObj(newAsksData)
     setBidsData(newBidsData)
     setAsksData(newAsksData)
+  }
+
+  const sortObj = obj => {
+    let total = 0
+
+    let sortedObj = Object.keys(obj).sort().reduce(function (result, key) {
+      total += obj[key].size
+      result[key] = { ...obj[key], total: total };
+      return result;
+    }, {});
+
+    sortedObj = { ...sortedObj, total: total }
+
+    return sortedObj
   }
 
   return (
@@ -162,10 +187,12 @@ function App() {
       <TopBar>
         <Title>Order Book</Title>
       </TopBar>
-      <MainPage>
-        <PriceTable type="bid" data={bidsData}></PriceTable>
-        <PriceTable type="ask" data={asksData}></PriceTable>
-      </MainPage>
+      <MainPageWrapper>
+        <MainPage>
+          <PriceTable type="bid" data={bidsData}></PriceTable>
+          <PriceTable type="ask" data={asksData}></PriceTable>
+        </MainPage>
+      </MainPageWrapper>
       <BottomBar>
         <Button color={"#5741d9"}>Toggle Feed</Button>
         <Button color={"#b91d1d"}>Kill Feed</Button>
