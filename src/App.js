@@ -100,6 +100,7 @@ const ticketOptions2 = [
 ]
 
 function App() {
+  const [subscribed, setSubscribed] = useState(false);
   const [needUpdate, setNeedUpdate] = useState(false);
   const [ticketFilterdData, setTicketFilterdData] = useState({ bids: {}, asks: {} });
   const [bXBTUSD, setXBTUSD] = useState(true);
@@ -144,33 +145,45 @@ function App() {
     ws.current.onmessage = e => {
       if (isPaused) return;
       const message = JSON.parse(e.data);
-      funcProcData(message);
+
+      if (message.event === "subscribed")
+        setSubscribed(true)
+      else if (message.event === "unsubscribed")
+        setSubscribed(false)
+      else
+        funcProcData(message);
     };
   }, [isPaused]);
+
+  useEffect(() => {
+    if (ws.current.readyState === WebSocket.OPEN) {
+      if (subscribed === false && bXBTUSD === true)
+        ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+      else if (subscribed === false && bXBTUSD === false)
+        ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+    }
+  }, [subscribed]);
 
   useEffect(() => {
     funcUpdateData()
   }, [ticketSelected]);
 
   useEffect(() => {
-    if (needUpdate === true)
-      funcUpdateData()
+    if (needUpdate === true) funcUpdateData()
   }, [needUpdate]);
 
   useEffect(() => {
-    const interval = setInterval(() => { setNeedUpdate(true) }, 3 * 1000);
+    const interval = setInterval(() => { setNeedUpdate(true) }, 1 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   const onToggleFeed = () => {
-    updateDataList.current = []
-
     if (bXBTUSD === true) {
       ws.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
-      // ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+      setTicketSelected(ticketOptions2[0]);
     } else {
       ws.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
-      // ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+      setTicketSelected(ticketOptions1[0]);
     }
 
     setXBTUSD(!bXBTUSD)
@@ -178,12 +191,13 @@ function App() {
 
   const funcProcData = (data) => {
     // console.log("e", data);
-    if (data.bids && data.asks) {
-      updateDataList.current = [...updateDataList.current, data]
+    if (data.feed === "book_ui_1_snapshot") {
+      orgData.current = { bids: {}, asks: {} }
+      updateDataList.current = []
     }
 
-    if (data.feed === "book_ui_1_snapshot") {
-      setNeedUpdate(true)
+    if (data.bids && data.asks) {
+      updateDataList.current = [...updateDataList.current, data]
     }
   }
 
@@ -213,8 +227,6 @@ function App() {
     }
 
     orgData.current = { bids: newBidsData, asks: newAsksData }
-
-    console.log("funcUpdateData: ticketSelected", ticketSelected)
 
     let sortfilteredBidsData = funcSortFilterData(orgData.current.bids)
     let sortfilteredAsksData = funcSortFilterData(orgData.current.asks)
@@ -257,7 +269,7 @@ function App() {
         <SelectWrapper>
           <Select
             styles={ticketSelectStyles}
-            options={ticketOptions1}
+            options={bXBTUSD ? ticketOptions1 : ticketOptions2}
             isSearchable={false}
             value={ticketSelected}
             onChange={onTicketSelChange}
