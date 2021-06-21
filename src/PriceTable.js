@@ -7,7 +7,9 @@ const TablePage = styled.div`
 `;
 
 function PriceTable({ type, data }) {
-  let total = data["total"]
+  let total = 0
+  if(data !== undefined) total = data.total
+
   return (
     <TablePage type={type}>
       <TableRow

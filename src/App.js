@@ -88,11 +88,11 @@ const Button = styled.button`
 `;
 
 function App() {
-  const [bidsData, setBidsData] = useState({});
-  const [asksData, setAsksData] = useState({});
+  const [orderbookData, setOrderbookData] = useState({});
   const [isPaused, setPause] = useState(false);
   const ws = useRef(null);
   let updateDataList = [];
+  let ticketSelected = 0
 
   const ticketOptions = [
     { value: '0', label: 'Group 0.5' },
@@ -160,8 +160,9 @@ function App() {
 
       newBidsData = sortObj(newBidsData)
       newAsksData = sortObj(newAsksData)
-      setBidsData(newBidsData);
-      setAsksData(newAsksData);
+
+      let newdata = { bids: newBidsData, asks: newAsksData }
+      setOrderbookData(newdata);
     } else if (data.feed === "book_ui_1") {
       if (data.bids && data.asks) {
         updateDataList = [...updateDataList, data]
@@ -175,8 +176,8 @@ function App() {
     updateDataList = []
     // console.log("funcUpdateData: updateDataList length", updateDataList.length)
 
-    let newBidsData = { ...bidsData }
-    let newAsksData = { ...asksData }
+    let newBidsData = { ...orderbookData.bids }
+    let newAsksData = { ...orderbookData.asks }
 
     dataList.map(data => {
       data.bids.map(item => {
@@ -198,16 +199,18 @@ function App() {
 
     newBidsData = sortObj(newBidsData)
     newAsksData = sortObj(newAsksData)
-    setBidsData(newBidsData)
-    setAsksData(newAsksData)
+
+    let newdata = { bids: newBidsData, asks: newAsksData }
+    setOrderbookData(newdata);
   }
 
   const sortObj = obj => {
-    let total = 0
+    let tempObj = { ...obj }
 
-    let sortedObj = Object.keys(obj).sort().reduce(function (result, key) {
-      total += obj[key].size
-      result[key] = { ...obj[key], total: total };
+    let total = 0
+    let sortedObj = Object.keys(tempObj).sort().reduce(function (result, key) {
+      total += tempObj[key].size
+      result[key] = { ...tempObj[key], total: total };
       return result;
     }, {});
 
@@ -217,7 +220,9 @@ function App() {
   }
 
   const onTicketSelChange = event => {
-    // console.log("onTicketSelChange", event.value);
+    console.log("onTicketSelChange", event.value);
+    ticketSelected = event.value
+    // funcUpdateData()
   }
 
   return (
@@ -236,8 +241,8 @@ function App() {
       </TopBar>
       <MainPageWrapper>
         <MainPage>
-          <PriceTable type="bid" data={bidsData}></PriceTable>
-          <PriceTable type="ask" data={asksData}></PriceTable>
+          <PriceTable type="bid" data={orderbookData.bids}></PriceTable>
+          <PriceTable type="ask" data={orderbookData.asks}></PriceTable>
         </MainPage>
       </MainPageWrapper>
       <BottomBar>
