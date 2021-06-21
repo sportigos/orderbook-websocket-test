@@ -2,6 +2,7 @@ import './App.css';
 import React, { useEffect, useState, useRef } from 'react';
 import styled from "@emotion/styled";
 import PriceTable from './PriceTable';
+import Select from 'react-select'
 
 const Section = styled.div`
   height: 100vh;
@@ -15,10 +16,12 @@ const Section = styled.div`
 const TopBar = styled.div`
   height: 64px;
   display: flex;
-  margin: 10px 10px 1px;
   flex-direction: row;
+  align-items: center;
+  margin: 10px 10px 1px;
   background-color: #111827;
   border-radius: 5px;
+  position: relative;
 `;
 
 const Title = styled.p`
@@ -27,6 +30,13 @@ const Title = styled.p`
   margin-left: 20px;
   text-align: center;
   font-weight: bold;
+`;
+
+const SelectWrapper = styled.div`
+  position: absolute;
+  right: 80px;
+  z-index: 100;
+  font-weight: 500;
 `;
 
 const MainPageWrapper = styled.div`
@@ -83,6 +93,28 @@ function App() {
   const [isPaused, setPause] = useState(false);
   const ws = useRef(null);
   let updateDataList = [];
+
+  const ticketOptions = [
+    { value: '0', label: 'Group 0.5' },
+    { value: '1', label: 'Group 1.0' },
+    { value: '2', label: 'Group 2.5' }
+  ]
+
+  const ticketSelectStyles = {
+    control: (provided) => ({
+      ...provided,
+      width: 120,
+      background: "#374151",
+      borderRadius: 5,
+      border: 0,
+      boxShadow: 'none',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: 'white'
+    }),
+    indicatorSeparator: styles => ({ ...styles, display: "none" }),
+  };
 
   useEffect(() => {
     ws.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
@@ -184,10 +216,23 @@ function App() {
     return sortedObj
   }
 
+  const onTicketSelChange = event => {
+    // console.log("onTicketSelChange", event.value);
+  }
+
   return (
     <Section>
       <TopBar>
         <Title>Order Book</Title>
+        <SelectWrapper>
+          <Select
+            styles={ticketSelectStyles}
+            options={ticketOptions}
+            isSearchable={false}
+            defaultValue={{ value: '0', label: 'Group 0.5' }}
+            onChange={onTicketSelChange}
+          />
+        </SelectWrapper>
       </TopBar>
       <MainPageWrapper>
         <MainPage>
