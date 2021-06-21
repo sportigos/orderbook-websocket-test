@@ -87,24 +87,32 @@ const Button = styled.button`
   }
 `;
 
+const ticketOptions1 = [
+  { value: 0.5, label: 'Group 0.5' },
+  { value: 1.0, label: 'Group 1.0' },
+  { value: 2.5, label: 'Group 2.5' }
+]
+
+const ticketOptions2 = [
+  { value: 0.05, label: 'Group 0.05' },
+  { value: 0.1, label: 'Group 0.1' },
+  { value: 0.25, label: 'Group 0.25' }
+]
+
 function App() {
+  const [needUpdate, setNeedUpdate] = useState(false);
   const [ticketFilterdData, setTicketFilterdData] = useState({ bids: {}, asks: {} });
+  const [bXBTUSD, setXBTUSD] = useState(true);
+  const [ticketSelected, setTicketSelected] = useState(ticketOptions1[0]);
   const [isPaused, setPause] = useState(false);
   const ws = useRef(null);
   let orgData = useRef({ bids: {}, asks: {} })
   let updateDataList = useRef([]);
-  let ticketSelected = useRef(0.5)
-
-  const ticketOptions = [
-    { value: 0.5, label: 'Group 0.5' },
-    { value: 1.0, label: 'Group 1.0' },
-    { value: 2.5, label: 'Group 2.5' }
-  ]
 
   const ticketSelectStyles = {
     control: (provided) => ({
       ...provided,
-      width: 120,
+      width: 140,
       background: "#374151",
       borderRadius: 5,
       border: 0,
@@ -120,7 +128,7 @@ function App() {
   useEffect(() => {
     ws.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
     ws.current.onopen = () => {
-      // console.log("ws opened");
+      console.log("ws opened");
       ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
     }
     ws.current.onclose = () => console.log("ws closed");
@@ -141,10 +149,32 @@ function App() {
   }, [isPaused]);
 
   useEffect(() => {
-    const interval = setInterval(funcUpdateData, 3 * 1000);
+    funcUpdateData()
+  }, [ticketSelected]);
+
+  useEffect(() => {
+    if (needUpdate === true)
+      funcUpdateData()
+  }, [needUpdate]);
+
+  useEffect(() => {
+    const interval = setInterval(() => { setNeedUpdate(true) }, 3 * 1000);
     return () => clearInterval(interval);
   }, []);
 
+  const onToggleFeed = () => {
+    updateDataList.current = []
+
+    if (bXBTUSD === true) {
+      ws.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+      // ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+    } else {
+      ws.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+      // ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+    }
+
+    setXBTUSD(!bXBTUSD)
+  }
 
   const funcProcData = (data) => {
     // console.log("e", data);
@@ -153,7 +183,7 @@ function App() {
     }
 
     if (data.feed === "book_ui_1_snapshot") {
-      funcUpdateData()
+      setNeedUpdate(true)
     }
   }
 
@@ -184,24 +214,24 @@ function App() {
 
     orgData.current = { bids: newBidsData, asks: newAsksData }
 
+    console.log("funcUpdateData: ticketSelected", ticketSelected)
+
     let sortfilteredBidsData = funcSortFilterData(orgData.current.bids)
     let sortfilteredAsksData = funcSortFilterData(orgData.current.asks)
     setTicketFilterdData({ bids: sortfilteredBidsData, asks: sortfilteredAsksData })
+
+    setNeedUpdate(false)
   }
 
   const funcSortFilterData = (data) => {
     let newData = {}
 
     Object.keys(data).map(key => {
-      if (ticketSelected.current === 0.5) {
-        newData[key] = { size: data[key].size }
-      } else {
-        let nearestPrice = parseFloat((parseInt(parseFloat(key) / ticketSelected.current) * ticketSelected.current)).toFixed(2)
-        if (newData[nearestPrice] === undefined)
-          newData[nearestPrice] = { size: data[key].size }
-        else
-          newData[nearestPrice] = { size: newData[nearestPrice].size + data[key].size }
-      }
+      let nearestPrice = parseFloat(parseInt(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
+      if (newData[nearestPrice] === undefined)
+        newData[nearestPrice] = { size: data[key].size }
+      else
+        newData[nearestPrice] = { size: newData[nearestPrice].size + data[key].size }
     })
 
     let total = 0
@@ -216,9 +246,8 @@ function App() {
     return newData
   }
 
-  const onTicketSelChange = event => {
-    ticketSelected.current = event.value
-    funcUpdateData()
+  const onTicketSelChange = selectedOption => {
+    setTicketSelected(selectedOption);
   }
 
   return (
@@ -228,9 +257,9 @@ function App() {
         <SelectWrapper>
           <Select
             styles={ticketSelectStyles}
-            options={ticketOptions}
+            options={ticketOptions1}
             isSearchable={false}
-            defaultValue={{ value: '0', label: 'Group 0.5' }}
+            value={ticketSelected}
             onChange={onTicketSelChange}
           />
         </SelectWrapper>
@@ -242,7 +271,7 @@ function App() {
         </MainPage>
       </MainPageWrapper>
       <BottomBar>
-        <Button color={"#5741d9"}>Toggle Feed</Button>
+        <Button color={"#5741d9"} onClick={onToggleFeed}>Toggle Feed</Button>
         <Button color={"#b91d1d"}>Kill Feed</Button>
       </BottomBar>
     </Section>
