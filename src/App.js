@@ -88,16 +88,17 @@ const Button = styled.button`
 `;
 
 function App() {
-  const [orderbookData, setOrderbookData] = useState({});
+  const [ticketFilterdData, setTicketFilterdData] = useState({ bids: {}, asks: {} });
   const [isPaused, setPause] = useState(false);
   const ws = useRef(null);
-  let updateDataList = [];
-  let ticketSelected = 0
+  let orgData = useRef({ bids: {}, asks: {} })
+  let updateDataList = useRef([]);
+  let ticketSelected = useRef(0.5)
 
   const ticketOptions = [
-    { value: '0', label: 'Group 0.5' },
-    { value: '1', label: 'Group 1.0' },
-    { value: '2', label: 'Group 2.5' }
+    { value: 0.5, label: 'Group 0.5' },
+    { value: 1.0, label: 'Group 1.0' },
+    { value: 2.5, label: 'Group 2.5' }
   ]
 
   const ticketSelectStyles = {
@@ -140,52 +141,36 @@ function App() {
   }, [isPaused]);
 
   useEffect(() => {
-    const interval = setInterval(funcUpdateData, 2 * 1000);
+    const interval = setInterval(funcUpdateData, 3 * 1000);
     return () => clearInterval(interval);
   }, []);
 
 
   const funcProcData = (data) => {
     // console.log("e", data);
+    if (data.bids && data.asks) {
+      updateDataList.current = [...updateDataList.current, data]
+    }
+
     if (data.feed === "book_ui_1_snapshot") {
-      let newBidsData = {}
-      data.bids.map(item => (
-        newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
-      ))
-
-      let newAsksData = {}
-      data.asks.map(item => (
-        newAsksData = { ...newAsksData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
-      ))
-
-      newBidsData = sortObj(newBidsData)
-      newAsksData = sortObj(newAsksData)
-
-      let newdata = { bids: newBidsData, asks: newAsksData }
-      setOrderbookData(newdata);
-    } else if (data.feed === "book_ui_1") {
-      if (data.bids && data.asks) {
-        updateDataList = [...updateDataList, data]
-        // console.log("funcProcData: updateDataList length", updateDataList.length)
-      }
+      funcUpdateData()
     }
   }
 
   const funcUpdateData = () => {
-    let dataList = [...updateDataList]
-    updateDataList = []
-    // console.log("funcUpdateData: updateDataList length", updateDataList.length)
+    let dataList = [...updateDataList.current]
+    updateDataList.current = []
 
-    let newBidsData = { ...orderbookData.bids }
-    let newAsksData = { ...orderbookData.asks }
+    let newBidsData = { ...orgData.current.bids }
+    let newAsksData = { ...orgData.current.asks }
 
     dataList.map(data => {
       data.bids.map(item => {
-        newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
+        newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
       })
 
       data.asks.map(item => {
-        newAsksData = { ...newAsksData, [parseFloat(item[0]).toFixed(2)]: { size: item[1], total: 0 } }
+        newAsksData = { ...newAsksData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
       })
     })
 
@@ -197,32 +182,43 @@ function App() {
       if (newAsksData[key].size == 0) delete newAsksData[key];
     }
 
-    newBidsData = sortObj(newBidsData)
-    newAsksData = sortObj(newAsksData)
+    orgData.current = { bids: newBidsData, asks: newAsksData }
 
-    let newdata = { bids: newBidsData, asks: newAsksData }
-    setOrderbookData(newdata);
+    let sortfilteredBidsData = funcSortFilterData(orgData.current.bids)
+    let sortfilteredAsksData = funcSortFilterData(orgData.current.asks)
+    setTicketFilterdData({ bids: sortfilteredBidsData, asks: sortfilteredAsksData })
   }
 
-  const sortObj = obj => {
-    let tempObj = { ...obj }
+  const funcSortFilterData = (data) => {
+    let newData = {}
+
+    Object.keys(data).map(key => {
+      if (ticketSelected.current === 0.5) {
+        newData[key] = { size: data[key].size }
+      } else {
+        let nearestPrice = parseFloat((parseInt(parseFloat(key) / ticketSelected.current) * ticketSelected.current)).toFixed(2)
+        if (newData[nearestPrice] === undefined)
+          newData[nearestPrice] = { size: data[key].size }
+        else
+          newData[nearestPrice] = { size: newData[nearestPrice].size + data[key].size }
+      }
+    })
 
     let total = 0
-    let sortedObj = Object.keys(tempObj).sort().reduce(function (result, key) {
-      total += tempObj[key].size
-      result[key] = { ...tempObj[key], total: total };
+    let sortData = Object.keys(newData).sort().reduce(function (result, key) {
+      total += newData[key].size
+      result[key] = { ...newData[key], total: total };
       return result;
     }, {});
 
-    sortedObj = { ...sortedObj, total: total }
+    newData = { ...sortData, total: total }
 
-    return sortedObj
+    return newData
   }
 
   const onTicketSelChange = event => {
-    console.log("onTicketSelChange", event.value);
-    ticketSelected = event.value
-    // funcUpdateData()
+    ticketSelected.current = event.value
+    funcUpdateData()
   }
 
   return (
@@ -241,8 +237,8 @@ function App() {
       </TopBar>
       <MainPageWrapper>
         <MainPage>
-          <PriceTable type="bid" data={orderbookData.bids}></PriceTable>
-          <PriceTable type="ask" data={orderbookData.asks}></PriceTable>
+          <PriceTable type="bid" data={ticketFilterdData.bids}></PriceTable>
+          <PriceTable type="ask" data={ticketFilterdData.asks}></PriceTable>
         </MainPage>
       </MainPageWrapper>
       <BottomBar>
