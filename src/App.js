@@ -105,10 +105,10 @@ function App() {
   const [ticketFilterdData, setTicketFilterdData] = useState({ bids: {}, asks: {} });
   const [bXBTUSD, setXBTUSD] = useState(true);
   const [ticketSelected, setTicketSelected] = useState(ticketOptions1[0]);
-  const [isPaused, setPause] = useState(false);
   const ws = useRef(null);
   let orgData = useRef({ bids: {}, asks: {} })
   let updateDataList = useRef([]);
+  let throwerror = useRef(true)
 
   const ticketSelectStyles = {
     control: (provided) => ({
@@ -126,24 +126,17 @@ function App() {
     indicatorSeparator: styles => ({ ...styles, display: "none" }),
   };
 
-  useEffect(() => {
+  const connWebSocket = () => {
     ws.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
     ws.current.onopen = () => {
       console.log("ws opened");
       ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
     }
     ws.current.onclose = () => console.log("ws closed");
-
-    return () => {
-      ws.current.close();
+    ws.current.onerror = (event) => {
+      console.error("WebSocket error observed:", event);
     };
-  }, []);
-
-  useEffect(() => {
-    if (!ws.current) return;
-
     ws.current.onmessage = e => {
-      if (isPaused) return;
       const message = JSON.parse(e.data);
 
       if (message.event === "subscribed")
@@ -153,7 +146,13 @@ function App() {
       else
         funcProcData(message);
     };
-  }, [isPaused]);
+
+    return () => {
+      ws.current.close();
+    };
+  }
+
+  useEffect(connWebSocket, []);
 
   useEffect(() => {
     if (ws.current.readyState === WebSocket.OPEN) {
@@ -185,6 +184,19 @@ function App() {
     setXBTUSD(!bXBTUSD)
   }
 
+  const onKillFeed = () => {
+    if(throwerror.current === true){
+      ws.current.close()
+      ws.current = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
+      ws.current.onerror = (event) => {
+        console.error("WebSocket error observed:", event);
+      };  
+    }else{
+      connWebSocket()
+    }
+    throwerror.current = !throwerror.current
+  }
+
   const funcProcData = (data) => {
     // console.log("e", data);
     if (data.feed === "book_ui_1_snapshot") {
@@ -214,12 +226,12 @@ function App() {
       })
     })
 
-    for (var key in newBidsData) {
-      if (newBidsData[key].size == 0) delete newBidsData[key];
+    for (let key in newBidsData) {
+      if (newBidsData[key].size === 0) delete newBidsData[key];
     }
 
-    for (var key in newAsksData) {
-      if (newAsksData[key].size == 0) delete newAsksData[key];
+    for (let key in newAsksData) {
+      if (newAsksData[key].size === 0) delete newAsksData[key];
     }
 
     orgData.current = { bids: newBidsData, asks: newAsksData }
@@ -278,7 +290,7 @@ function App() {
       </MainPageWrapper>
       <BottomBar>
         <Button color={"#5741d9"} onClick={onToggleFeed}>Toggle Feed</Button>
-        <Button color={"#b91d1d"}>Kill Feed</Button>
+        <Button color={"#b91d1d"} onClick={onKillFeed}>Kill Feed</Button>
       </BottomBar>
     </Section>
   );
