@@ -101,7 +101,7 @@ const ticketOptions2 = [
 
 function App() {
   const [subscribed, setSubscribed] = useState(false);
-  const [needUpdate, setNeedUpdate] = useState(false);
+  const [needUpdate, setNeedUpdate] = useState({update: true});
   const [ticketFilterdData, setTicketFilterdData] = useState({ bids: {}, asks: {} });
   const [bXBTUSD, setXBTUSD] = useState(true);
   const [ticketSelected, setTicketSelected] = useState(ticketOptions1[0]);
@@ -166,14 +166,10 @@ function App() {
 
   useEffect(() => {
     funcUpdateData()
-  }, [ticketSelected]);
+  }, [needUpdate, ticketSelected]);
 
   useEffect(() => {
-    if (needUpdate === true) funcUpdateData()
-  }, [needUpdate]);
-
-  useEffect(() => {
-    const interval = setInterval(() => { setNeedUpdate(true) }, 1 * 1000);
+    const interval = setInterval(() => { setNeedUpdate({update: true}) }, 2 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -231,8 +227,6 @@ function App() {
     let sortfilteredBidsData = funcSortFilterData(orgData.current.bids)
     let sortfilteredAsksData = funcSortFilterData(orgData.current.asks)
     setTicketFilterdData({ bids: sortfilteredBidsData, asks: sortfilteredAsksData })
-
-    setNeedUpdate(false)
   }
 
   const funcSortFilterData = (data) => {
