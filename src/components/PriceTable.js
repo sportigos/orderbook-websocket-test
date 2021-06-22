@@ -18,7 +18,6 @@ const DataWrapper = styled.div`
 `;
 
 function PriceTable({ type, data }) {
-  let sum = 0
   return (
     <TablePage type={type}>
       <TableRow
@@ -32,26 +31,22 @@ function PriceTable({ type, data }) {
         }}>
       </TableRow>
       <DataWrapper type={type}>
-        {data && Object.keys(data).sort().map(key => {
-          sum += data[key].size
-          return (
-            key === "total" ? '' :
-              (
-                <div key={key}>
-                  <TableRow
-                    type={type}
-                    value={{
-                      price: key,
-                      size: data[key].size,
-                      total: sum,
-                      percent: Math.max(sum * 100 / data.total, 1)
-                    }}>
-                  </TableRow>
-                </div>
-              )
-          )
-        }
-        )}
+        {data && Object.keys(data).sort().map(key => (
+          key === "total" ? '' :
+            (
+              <div key={key}>
+                <TableRow
+                  type={type}
+                  value={{
+                    price: key,
+                    size: data[key].size,
+                    total: data[key].total,
+                    percent: Math.max(parseInt(data[key].total * 100 / data.total), 1)
+                  }}>
+                </TableRow>
+              </div>
+            )
+        ))}
       </DataWrapper>
     </TablePage>
   );

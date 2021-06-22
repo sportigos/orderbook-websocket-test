@@ -112,6 +112,7 @@ function App() {
   let orgData = useRef({ bids: {}, asks: {} })
   let updateDataList = useRef([]);
   let throwerror = useRef(true)
+  let funcProcData = null
 
   const ticketSelectStyles = {
     control: (provided) => ({
@@ -164,11 +165,11 @@ function App() {
       else if (subscribed === false && bXBTUSD === false)
         websocket.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
     }
-  }, [subscribed]);
+  }, [subscribed, bXBTUSD]);
 
   useEffect(() => {
     funcProcData()
-  }, [needUpdate, ticketSelected]);
+  }, [needUpdate, ticketSelected, funcProcData]);
 
   useEffect(() => {
     const interval = setInterval(() => { setNeedUpdate({ update: true }) }, 3 * 1000);
@@ -218,11 +219,9 @@ function App() {
     if (data.feed === "book_ui_1_snapshot") {
       setNeedUpdate({ update: true })
     }
-
-    console.log("e", updateDataList.current.length);
   }
 
-  const funcProcData = () => {
+  funcProcData = () => {
     let dataList = [...updateDataList.current]
     updateDataList.current = []
 
@@ -254,10 +253,10 @@ function App() {
 
   const funcTicketFilterData = (data) => {
     let newData = {}
-
     let total = 0
+
     Object.keys(data).forEach(key => {
-      total += data[key].size
+      // total += data[key].size
       let nearestPrice = parseFloat(parseInt(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
       if (newData[nearestPrice] === undefined)
         newData[nearestPrice] = { size: data[key].size }
@@ -265,14 +264,18 @@ function App() {
         newData[nearestPrice] = { size: newData[nearestPrice].size + data[key].size }
     })
 
-    // let total = 0
     // let sortData = Object.keys(newData).sort().reduce(function (result, key) {
     //   total += newData[key].size
     //   result[key] = { ...newData[key], total: total };
     //   return result;
     // }, {});
-
     // newData = { ...sortData, total: total }
+
+    Object.keys(newData).sort().forEach(key => {
+      total += newData[key].size
+      newData[key] = {...newData[key], total: total}
+    })
+
     newData = { ...newData, total: total }
 
     return newData

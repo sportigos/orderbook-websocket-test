@@ -56,6 +56,8 @@ function TableRow({ type, header, value }) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
 
+  console.log("percent", value.percent)
+
   return (
     <TblRowWrapper type={type} header={header}>
       <VisualizeBar type={type} header={header} percent={value.percent}></VisualizeBar>
