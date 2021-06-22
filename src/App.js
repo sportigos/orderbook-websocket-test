@@ -104,11 +104,11 @@ const ticketOptionsETH = [
 
 function App() {
   const [subscribed, setSubscribed] = useState(false);
-  const [needUpdate, setNeedUpdate] = useState({update: true});
+  const [needUpdate, setNeedUpdate] = useState({ update: true });
   const [ticketFilterdData, setTicketFilterdData] = useState({ bids: {}, asks: {} });
   const [bXBTUSD, setXBTUSD] = useState(true);
   const [ticketSelected, setTicketSelected] = useState(ticketOptionsXBT[0]);
-  const ws = useRef(null);
+  const websocket = useRef(null);
   let orgData = useRef({ bids: {}, asks: {} })
   let updateDataList = useRef([]);
   let throwerror = useRef(true)
@@ -130,16 +130,16 @@ function App() {
   };
 
   const connWebSocket = () => {
-    ws.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
-    ws.current.onopen = () => {
+    websocket.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
+    websocket.current.onopen = () => {
       console.log("ws opened");
-      ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
+      websocket.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
     }
-    ws.current.onclose = () => console.log("ws closed");
-    ws.current.onerror = (event) => {
+    websocket.current.onclose = () => console.log("ws closed");
+    websocket.current.onerror = (event) => {
       console.error("WebSocket error observed:", event);
     };
-    ws.current.onmessage = e => {
+    websocket.current.onmessage = e => {
       const message = JSON.parse(e.data);
 
       if (message.event === "subscribed")
@@ -147,40 +147,40 @@ function App() {
       else if (message.event === "unsubscribed")
         setSubscribed(false)
       else
-        funcProcData(message);
+        funcReceiveData(message);
     };
 
     return () => {
-      ws.current.close();
+      websocket.current.close();
     };
   }
 
   useEffect(connWebSocket, []);
 
   useEffect(() => {
-    if (ws.current.readyState === WebSocket.OPEN) {
+    if (websocket.current.readyState === WebSocket.OPEN) {
       if (subscribed === false && bXBTUSD === true)
-        ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+        websocket.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
       else if (subscribed === false && bXBTUSD === false)
-        ws.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+        websocket.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
     }
   }, [subscribed]);
 
   useEffect(() => {
-    funcUpdateData()
+    funcProcData()
   }, [needUpdate, ticketSelected]);
 
   useEffect(() => {
-    const interval = setInterval(() => { setNeedUpdate({update: true}) }, 3 * 1000);
+    const interval = setInterval(() => { setNeedUpdate({ update: true }) }, 3 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   const onToggleFeed = () => {
     if (bXBTUSD === true) {
-      ws.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+      websocket.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
       setTicketSelected(ticketOptionsETH[0]);
     } else {
-      ws.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+      websocket.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
       setTicketSelected(ticketOptionsXBT[0]);
     }
 
@@ -188,19 +188,23 @@ function App() {
   }
 
   const onKillFeed = () => {
-    if(throwerror.current === true){
-      ws.current.close()
-      ws.current = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
-      ws.current.onerror = (event) => {
+    if (throwerror.current === true) {
+      websocket.current.close()
+      websocket.current = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
+      websocket.current.onerror = (event) => {
         console.error("WebSocket error observed:", event);
-      };  
-    }else{
+      };
+    } else {
       connWebSocket()
     }
     throwerror.current = !throwerror.current
   }
 
-  const funcProcData = (data) => {
+  const onTicketSelChange = selectedOption => {
+    setTicketSelected(selectedOption);
+  }
+
+  const funcReceiveData = (data) => {
     // console.log("e", data);
     if (data.feed === "book_ui_1_snapshot") {
       orgData.current = { bids: {}, asks: {} }
@@ -210,9 +214,15 @@ function App() {
     if (data.bids && data.asks) {
       updateDataList.current = [...updateDataList.current, data]
     }
+
+    if (data.feed === "book_ui_1_snapshot") {
+      setNeedUpdate({ update: true })
+    }
+
+    console.log("e", updateDataList.current.length);
   }
 
-  const funcUpdateData = () => {
+  const funcProcData = () => {
     let dataList = [...updateDataList.current]
     updateDataList.current = []
 
@@ -221,33 +231,33 @@ function App() {
 
     dataList.forEach(data => {
       data.bids.forEach(item => {
-        newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
+        if (item[1] === 0)
+          delete newBidsData[parseFloat(item[0]).toFixed(2)]
+        else
+          newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
       })
 
       data.asks.forEach(item => {
-        newAsksData = { ...newAsksData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
+        if (item[1] === 0)
+          delete newAsksData[parseFloat(item[0]).toFixed(2)]
+        else
+          newAsksData = { ...newAsksData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
       })
     })
 
-    for (let key in newBidsData) {
-      if (newBidsData[key].size === 0) delete newBidsData[key];
-    }
-
-    for (let key in newAsksData) {
-      if (newAsksData[key].size === 0) delete newAsksData[key];
-    }
-
     orgData.current = { bids: newBidsData, asks: newAsksData }
 
-    let sortfilteredBidsData = funcSortFilterData(orgData.current.bids)
-    let sortfilteredAsksData = funcSortFilterData(orgData.current.asks)
+    let sortfilteredBidsData = funcTicketFilterData(orgData.current.bids)
+    let sortfilteredAsksData = funcTicketFilterData(orgData.current.asks)
     setTicketFilterdData({ bids: sortfilteredBidsData, asks: sortfilteredAsksData })
   }
 
-  const funcSortFilterData = (data) => {
+  const funcTicketFilterData = (data) => {
     let newData = {}
 
+    let total = 0
     Object.keys(data).forEach(key => {
+      total += data[key].size
       let nearestPrice = parseFloat(parseInt(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
       if (newData[nearestPrice] === undefined)
         newData[nearestPrice] = { size: data[key].size }
@@ -255,20 +265,17 @@ function App() {
         newData[nearestPrice] = { size: newData[nearestPrice].size + data[key].size }
     })
 
-    let total = 0
-    let sortData = Object.keys(newData).sort().reduce(function (result, key) {
-      total += newData[key].size
-      result[key] = { ...newData[key], total: total };
-      return result;
-    }, {});
+    // let total = 0
+    // let sortData = Object.keys(newData).sort().reduce(function (result, key) {
+    //   total += newData[key].size
+    //   result[key] = { ...newData[key], total: total };
+    //   return result;
+    // }, {});
 
-    newData = { ...sortData, total: total }
+    // newData = { ...sortData, total: total }
+    newData = { ...newData, total: total }
 
     return newData
-  }
-
-  const onTicketSelChange = selectedOption => {
-    setTicketSelected(selectedOption);
   }
 
   return (
