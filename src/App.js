@@ -53,7 +53,10 @@ const MainPageWrapper = styled.div`
 const MainPage = styled.div`
   display: flex;
   flex: 1;
-  flex-direction: row;
+  flex-direction: column-reverse;
+  @media (min-width: 1024px) {
+    flex-direction: row;
+  }
   border-radius: 3px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -168,7 +171,7 @@ function App() {
   }, [needUpdate, ticketSelected]);
 
   useEffect(() => {
-    const interval = setInterval(() => { setNeedUpdate({update: true}) }, 2 * 1000);
+    const interval = setInterval(() => { setNeedUpdate({update: true}) }, 3 * 1000);
     return () => clearInterval(interval);
   }, []);
 
