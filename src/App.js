@@ -1,7 +1,7 @@
 import './App.css';
 import React, { useEffect, useState, useRef } from 'react';
 import styled from "@emotion/styled";
-import PriceTable from './PriceTable';
+import PriceTable from './components/PriceTable';
 import Select from 'react-select'
 
 const Section = styled.div`
