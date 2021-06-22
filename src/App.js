@@ -256,24 +256,12 @@ function App() {
     let total = 0
 
     Object.keys(data).forEach(key => {
-      // total += data[key].size
+      total += data[key].size
       let nearestPrice = parseFloat(parseInt(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
       if (newData[nearestPrice] === undefined)
         newData[nearestPrice] = { size: data[key].size }
       else
         newData[nearestPrice] = { size: newData[nearestPrice].size + data[key].size }
-    })
-
-    // let sortData = Object.keys(newData).sort().reduce(function (result, key) {
-    //   total += newData[key].size
-    //   result[key] = { ...newData[key], total: total };
-    //   return result;
-    // }, {});
-    // newData = { ...sortData, total: total }
-
-    Object.keys(newData).sort().forEach(key => {
-      total += newData[key].size
-      newData[key] = {...newData[key], total: total}
     })
 
     newData = { ...newData, total: total }

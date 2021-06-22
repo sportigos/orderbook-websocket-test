@@ -25,7 +25,7 @@ const VisualizeBar = styled.div`
       right: ${(p) => p.type === "bid" ? "0" : "auto"};
       left: ${(p) => p.type === "bid" ? "auto" : "0"};
     }
-    width: ${(p) => `${p.percent}%`};
+    width: ${(p) => `${parseInt(p.percent)}%`};
   }
 `;
 
