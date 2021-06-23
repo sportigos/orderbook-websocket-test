@@ -119,6 +119,12 @@ const ticketSelectStyles: StylesConfig<TicketOptionType, false> = {
   indicatorSeparator: (provided) => ({ ...provided, display: "none" }),
 };
 
+const wssURL = "wss://www.cryptofacilities.com/ws/v1"
+const msgXBTUSDSub = '{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}'
+const msgETHUSDSub = '{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}'
+const msgXBTUSDUnsub = '{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}'
+const msgETHUSDUnSub = '{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}'
+
 function App() {
   const [subscribed, setSubscribed] = useState(false);
   const [needUpdate, setNeedUpdate] = useState({ update: true });
@@ -131,10 +137,10 @@ function App() {
   let throwerror = useRef(true)
 
   const connWebSocket = () => {
-    websocket.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
+    websocket.current = new WebSocket(wssURL);
     websocket.current.onopen = () => {
       console.log("ws opened");
-      websocket.current?.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
+      websocket.current?.send(msgXBTUSDSub);
     }
     websocket.current.onclose = () => {
       console.log("ws closed");
@@ -168,59 +174,11 @@ function App() {
   useEffect(() => {
     if (websocket.current?.readyState === WebSocket.OPEN) {
       if (subscribed === false && bXBTUSD === true)
-        websocket.current?.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+        websocket.current?.send(msgXBTUSDSub)
       else if (subscribed === false && bXBTUSD === false)
-        websocket.current?.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+        websocket.current?.send(msgETHUSDSub)
     }
   }, [subscribed, bXBTUSD]);
-
-  const onToggleFeed = () => {
-    if (bXBTUSD === true) {
-      websocket.current?.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
-      setTicketSelected(ticketOptionsETH[0]);
-    } else {
-      websocket.current?.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
-      setTicketSelected(ticketOptionsXBT[0]);
-    }
-
-    setXBTUSD(!bXBTUSD)
-  }
-
-  const onKillFeed = () => {
-    if (throwerror.current === true) {
-      websocket.current?.close()
-      websocket.current = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
-      websocket.current.onerror = (event) => {
-        console.error("WebSocket error observed:", event);
-      };
-
-      orgData.current = { bids: {}, asks: {} }
-      updateDataList.current = []
-    } else {
-      connWebSocket()
-    }
-    throwerror.current = !throwerror.current
-  }
-
-  const onTicketSelChange = (selectedOption: any) => {
-    setTicketSelected(selectedOption);
-  }
-
-  const funcReceiveData = (data: FeedData) => {
-    // console.log("e", data);
-    if (data.feed === "book_ui_1_snapshot") {
-      orgData.current = { bids: {}, asks: {} }
-      updateDataList.current = []
-    }
-
-    if (data.bids && data.asks) {
-      updateDataList.current = [...updateDataList.current, data]
-    }
-
-    if (data.feed === "book_ui_1_snapshot") {
-      setNeedUpdate({ update: true })
-    }
-  }
 
   useEffect(() => {
     const funcProcData = () => {
@@ -274,6 +232,54 @@ function App() {
     funcProcData()
 
   }, [needUpdate, ticketSelected]);
+
+  const onToggleFeed = () => {
+    if (bXBTUSD === true) {
+      websocket.current?.send(msgXBTUSDUnsub)
+      setTicketSelected(ticketOptionsETH[0]);
+    } else {
+      websocket.current?.send(msgETHUSDUnSub)
+      setTicketSelected(ticketOptionsXBT[0]);
+    }
+
+    setXBTUSD(!bXBTUSD)
+  }
+
+  const onKillFeed = () => {
+    if (throwerror.current === true) {
+      websocket.current?.close()
+      websocket.current = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
+      websocket.current.onerror = (event) => {
+        console.error("WebSocket error observed:", event);
+      };
+
+      orgData.current = { bids: {}, asks: {} }
+      updateDataList.current = []
+    } else {
+      connWebSocket()
+    }
+    throwerror.current = !throwerror.current
+  }
+
+  const onTicketSelChange = (selectedOption: any) => {
+    setTicketSelected(selectedOption);
+  }
+
+  const funcReceiveData = (data: FeedData) => {
+    // console.log("e", data);
+    if (data.feed === "book_ui_1_snapshot") {
+      orgData.current = { bids: {}, asks: {} }
+      updateDataList.current = []
+    }
+
+    if (data.bids && data.asks) {
+      updateDataList.current = [...updateDataList.current, data]
+    }
+
+    if (data.feed === "book_ui_1_snapshot") {
+      setNeedUpdate({ update: true })
+    }
+  }
 
   return (
     <Section>
