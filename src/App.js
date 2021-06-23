@@ -285,8 +285,8 @@ function App() {
       </TopBar>
       <MainPageWrapper>
         <MainPage>
-          <PriceTable type="bid" data={ticketFilterdData.bids}></PriceTable>
-          <PriceTable type="ask" data={ticketFilterdData.asks}></PriceTable>
+          <PriceTable tbltype="bid" data={ticketFilterdData.bids}></PriceTable>
+          <PriceTable tbltype="ask" data={ticketFilterdData.asks}></PriceTable>
         </MainPage>
       </MainPageWrapper>
       <BottomBar>

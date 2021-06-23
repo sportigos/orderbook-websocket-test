@@ -1,28 +1,33 @@
 import styled from "@emotion/styled";
 import TableRow from './TableRow';
 
-const TablePage = styled.div`
+interface PriceTableProps {
+  tbltype?: string;
+  data?: {[key: string]: any}
+}
+
+const TablePage = styled.div<PriceTableProps>`
   flex: 1;
   padding: 8px;
   @media (min-width: 1024px) {
-    padding: ${(p) => p.type === "bid" ? "8px 0 8px 8px" : "8px 8px 8px 0"};
+    padding: ${(p) => p.tbltype === "bid" ? "8px 0 8px 8px" : "8px 8px 8px 0"};
   }
 `;
 
-const DataWrapper = styled.div`
+const DataWrapper = styled.div<PriceTableProps>`
   display: flex;
-  flex-direction: ${(p) => p.type === "bid" ? "column" : "column-reverse"};
+  flex-direction: ${(p) => p.tbltype === "bid" ? "column" : "column-reverse"};
   @media (min-width: 1024px) {
     flex-direction: column;
   }
 `;
 
-function PriceTable({ type, data }) {
+const PriceTable: React.FC<PriceTableProps> = ({ tbltype, data }) => {
   let sum = 0
   return (
-    <TablePage type={type}>
+    <TablePage tbltype={tbltype}>
       <TableRow
-        tbltype={type}
+        tbltype={tbltype}
         header={true}
         value={{
           price: "PRICE",
@@ -31,7 +36,7 @@ function PriceTable({ type, data }) {
           percent: 0
         }}>
       </TableRow>
-      <DataWrapper type={type}>
+      <DataWrapper tbltype={tbltype}>
         {data && Object.keys(data).sort().map(key => {
           sum += data[key].size
           return (
@@ -39,7 +44,7 @@ function PriceTable({ type, data }) {
               (
                 <div key={key}>
                   <TableRow
-                    tbltype={type}
+                    tbltype={tbltype}
                     value={{
                       price: key,
                       size: data[key].size,
