@@ -3,7 +3,7 @@ import TableRow from './TableRow';
 
 interface PriceTableProps {
   tbltype?: string;
-  data?: {[key: string]: any}
+  data?: any
 }
 
 const TablePage = styled.div<PriceTableProps>`

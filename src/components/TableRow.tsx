@@ -3,7 +3,7 @@ import styled from "@emotion/styled";
 interface TableRowProps {
   tbltype?: string;
   header?: boolean;
-  value?: any;
+  value?: {total: number | string, size: number | string, price: number | string, percent: any};
   celltype?: string;
 }
 
@@ -63,31 +63,31 @@ const TblCell = styled.div<TableRowProps>`
 
 const TableRow: React.FC<TableRowProps> = ({ tbltype, header, value }) => {
 
-  function numberWithCommas(x: number) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  function numberWithCommas(x?: number | string) {
+    return x?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
 
   return (
     <TblRowWrapper tbltype={tbltype} header={header}>
-      <VisualizeBar tbltype={tbltype} header={header} percent={value.percent}></VisualizeBar>
+      <VisualizeBar tbltype={tbltype} header={header} percent={value?.percent}></VisualizeBar>
       <TblRow tbltype={tbltype} header={header}>
         <TblCell
           tbltype={tbltype}
           header={header}
           celltype="total">
-          {numberWithCommas(value.total)}
+          {numberWithCommas(value?.total)}
         </TblCell>
         <TblCell
           tbltype={tbltype}
           header={header}
           celltype="size">
-          {numberWithCommas(value.size)}
+          {numberWithCommas(value?.size)}
         </TblCell>
         <TblCell
           tbltype={tbltype}
           header={header}
           celltype="price">
-          {numberWithCommas(value.price)}
+          {numberWithCommas(value?.price)}
         </TblCell>
       </TblRow>
     </TblRowWrapper>

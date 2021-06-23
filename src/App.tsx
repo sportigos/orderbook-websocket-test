@@ -90,18 +90,18 @@ const Button = styled.button`
   }
 `;
 
-type MyOptionType = {
+interface TicketOptionType {
   label: string;
   value: number;
 };
 
-const ticketOptionsXBT: MyOptionType[] = [
+const ticketOptionsXBT: TicketOptionType[] = [
   { value: 0.5, label: 'Group 0.5' },
   { value: 1.0, label: 'Group 1.0' },
   { value: 2.5, label: 'Group 2.5' }
 ]
 
-const ticketOptionsETH: MyOptionType[] = [
+const ticketOptionsETH: TicketOptionType[] = [
   { value: 0.05, label: 'Group 0.05' },
   { value: 0.1, label: 'Group 0.1' },
   { value: 0.25, label: 'Group 0.25' }
@@ -113,14 +113,13 @@ function App() {
   const [ticketFilterdData, setTicketFilterdData] = useState({ bids: {}, asks: {} });
   const [bXBTUSD, setXBTUSD] = useState(true);
   const [ticketSelected, setTicketSelected] = useState(ticketOptionsXBT[0]);
-  // let websocket = useRef<WebSocket>(null);
-  let websocket: WebSocket;
+  let websocket = useRef<WebSocket>();
   let orgData = useRef({ bids: {}, asks: {} })
   let updateDataList = useRef(new Array());
   let throwerror = useRef(true)
   let funcProcData: () => void
 
-  const ticketSelectStyles: StylesConfig<MyOptionType, false> = {
+  const ticketSelectStyles: StylesConfig<TicketOptionType, false> = {
     control: (provided) => ({
       ...provided,
       width: 140,
@@ -133,20 +132,22 @@ function App() {
       ...provided,
       color: 'white'
     }),
-    indicatorSeparator: (styles) => ({ ...styles, display: "none" }),
+    indicatorSeparator: (provided) => ({ ...provided, display: "none" }),
   };
 
   const connWebSocket = () => {
-    websocket = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
-    websocket.onopen = () => {
+    websocket.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
+    websocket.current.onopen = () => {
       console.log("ws opened");
-      websocket.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
+      websocket.current?.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
     }
-    websocket.onclose = () => console.log("ws closed");
-    websocket.onerror = (event) => {
+    websocket.current.onclose = () => {
+      console.log("ws closed");
+    }
+    websocket.current.onerror = (event) => {
       console.error("WebSocket error observed:", event);
     };
-    websocket.onmessage = e => {
+    websocket.current.onmessage = e => {
       const message = JSON.parse(e.data);
 
       if (message.event === "subscribed")
@@ -158,20 +159,18 @@ function App() {
     };
 
     return () => {
-      websocket.close();
+      websocket.current?.close();
     };
   }
 
   useEffect(connWebSocket, []);
 
   useEffect(() => {
-    if (websocket == undefined)
-      return
-    if (websocket.readyState === WebSocket.OPEN) {
+    if (websocket.current?.readyState === WebSocket.OPEN) {
       if (subscribed === false && bXBTUSD === true)
-        websocket.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+        websocket.current?.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
       else if (subscribed === false && bXBTUSD === false)
-        websocket.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+        websocket.current?.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
     }
   }, [subscribed, bXBTUSD]);
 
@@ -186,10 +185,10 @@ function App() {
 
   const onToggleFeed = () => {
     if (bXBTUSD === true) {
-      websocket.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+      websocket.current?.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
       setTicketSelected(ticketOptionsETH[0]);
     } else {
-      websocket.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+      websocket.current?.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
       setTicketSelected(ticketOptionsXBT[0]);
     }
 
@@ -198,11 +197,14 @@ function App() {
 
   const onKillFeed = () => {
     if (throwerror.current === true) {
-      websocket.close()
-      websocket = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
-      websocket.onerror = (event) => {
+      websocket.current?.close()
+      websocket.current = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
+      websocket.current.onerror = (event) => {
         console.error("WebSocket error observed:", event);
       };
+
+      orgData.current = { bids: {}, asks: {} }
+      updateDataList.current = []
     } else {
       connWebSocket()
     }
