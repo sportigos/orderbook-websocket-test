@@ -161,7 +161,7 @@ function App() {
   useEffect(connWebSocket, []);
 
   useEffect(() => {
-    const interval = setInterval(() => { setNeedUpdate({ update: true }) }, 3 * 1000);
+    const interval = setInterval(() => { setNeedUpdate({ update: true }) }, 1 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -222,56 +222,57 @@ function App() {
     }
   }
 
-  const funcProcData = () => {
-    let dataList = [...updateDataList.current]
-    updateDataList.current = []
-
-    let newBidsData: PriceItem = { ...orgData.current.bids }
-    let newAsksData: PriceItem = { ...orgData.current.asks }
-
-    dataList.forEach((data: FeedData) => {
-      data.bids.forEach((item: number[]) => {
-        if (item[1] === 0)
-          delete newBidsData[item[0].toFixed(2)]
-        else
-          newBidsData = { ...newBidsData, [item[0].toFixed(2)]: { size: item[1] } }
-      })
-
-      data.asks.forEach((item: number[]) => {
-        if (item[1] === 0)
-          delete newAsksData[item[0].toFixed(2)]
-        else
-          newAsksData = { ...newAsksData, [item[0].toFixed(2)]: { size: item[1] } }
-      })
-    })
-
-    orgData.current = { bids: newBidsData, asks: newAsksData }
-
-    let sortfilteredBidsData = funcTicketFilterData(orgData.current.bids)
-    let sortfilteredAsksData = funcTicketFilterData(orgData.current.asks)
-    setTicketFilterdData({ bids: sortfilteredBidsData, asks: sortfilteredAsksData })
-  }
-
-  const funcTicketFilterData = (data: PriceItem) => {
-    let newData: PriceItem = {}
-    let total = 0
-
-    Object.keys(data).forEach(key => {
-      total += (data[key] as SizeBox).size
-      let nearestPrice = (Math.floor(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
-      if (newData[nearestPrice] === undefined)
-        newData[nearestPrice] = { size: (data[key] as SizeBox).size }
-      else
-        newData[nearestPrice] = { size: (newData[nearestPrice] as SizeBox).size + (data[key] as SizeBox).size }
-    })
-
-    newData = { ...newData, total: total }
-
-    return newData
-  }
-
   useEffect(() => {
+    const funcProcData = () => {
+      let dataList = [...updateDataList.current]
+      updateDataList.current = []
+
+      let newBidsData: PriceItem = { ...orgData.current.bids }
+      let newAsksData: PriceItem = { ...orgData.current.asks }
+
+      dataList.forEach((data: FeedData) => {
+        data.bids.forEach((item: number[]) => {
+          if (item[1] === 0)
+            delete newBidsData[item[0].toFixed(2)]
+          else
+            newBidsData = { ...newBidsData, [item[0].toFixed(2)]: { size: item[1] } }
+        })
+
+        data.asks.forEach((item: number[]) => {
+          if (item[1] === 0)
+            delete newAsksData[item[0].toFixed(2)]
+          else
+            newAsksData = { ...newAsksData, [item[0].toFixed(2)]: { size: item[1] } }
+        })
+      })
+
+      orgData.current = { bids: newBidsData, asks: newAsksData }
+
+      let sortfilteredBidsData = funcTicketFilterData(orgData.current.bids)
+      let sortfilteredAsksData = funcTicketFilterData(orgData.current.asks)
+      setTicketFilterdData({ bids: sortfilteredBidsData, asks: sortfilteredAsksData })
+    }
+
+    const funcTicketFilterData = (data: PriceItem) => {
+      let newData: PriceItem = {}
+      let total = 0
+
+      Object.keys(data).forEach(key => {
+        total += (data[key] as SizeBox).size
+        let nearestPrice = (Math.floor(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
+        if (newData[nearestPrice] === undefined)
+          newData[nearestPrice] = { size: (data[key] as SizeBox).size }
+        else
+          newData[nearestPrice] = { size: (newData[nearestPrice] as SizeBox).size + (data[key] as SizeBox).size }
+      })
+
+      newData = { ...newData, total: total }
+
+      return newData
+    }
+
     funcProcData()
+
   }, [needUpdate, ticketSelected]);
 
   return (
