@@ -1,10 +1,10 @@
 import styled from "@emotion/styled";
 import TableRow from './TableRow';
-import {SizeBox, PriceData} from '../interfaces'
+import {SizeBox, PriceItem} from '../interfaces'
 
 interface PriceTableProps {
   tbltype?: string;
-  data?: PriceData
+  data?: PriceItem
 }
 
 const TablePage = styled.div<PriceTableProps>`
@@ -48,7 +48,7 @@ const PriceTable: React.FC<PriceTableProps> = ({ tbltype, data }) => {
                     tbltype={tbltype}
                     value={{
                       price: key,
-                      size: (data[key] as {size: number}).size,
+                      size: (data[key] as SizeBox).size,
                       total: sum,
                       percent: Math.round(Math.max(sum * 100 / (data.total as number), 1))
                     }}>

@@ -2,6 +2,17 @@ export interface SizeBox {
   size: number
 }
 
-export interface PriceData {
+export interface PriceItem {
   [index: string]: number | SizeBox
+}
+
+export interface PriceList {
+  bids: PriceItem
+  asks: PriceItem
+}
+
+export interface FeedData {
+  feed: string
+  bids: number[][]
+  asks: number[][]
 }

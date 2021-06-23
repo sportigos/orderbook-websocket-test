@@ -1,8 +1,9 @@
 import './App.css';
-import React, { useEffect, useState, useRef, CSSProperties } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styled from "@emotion/styled";
 import PriceTable from './components/PriceTable';
 import Select, { StylesConfig } from 'react-select'
+import { PriceItem, SizeBox, PriceList, FeedData } from './interfaces';
 
 const Section = styled.div`
   height: 100vh;
@@ -107,6 +108,22 @@ const ticketOptionsETH: TicketOptionType[] = [
   { value: 0.25, label: 'Group 0.25' }
 ]
 
+const ticketSelectStyles: StylesConfig<TicketOptionType, false> = {
+  control: (provided) => ({
+    ...provided,
+    width: 140,
+    background: "#374151",
+    borderRadius: 5,
+    border: 0,
+    boxShadow: 'none',
+  }),
+  singleValue: (provided) => ({
+    ...provided,
+    color: 'white'
+  }),
+  indicatorSeparator: (provided) => ({ ...provided, display: "none" }),
+};
+
 function App() {
   const [subscribed, setSubscribed] = useState(false);
   const [needUpdate, setNeedUpdate] = useState({ update: true });
@@ -114,26 +131,10 @@ function App() {
   const [bXBTUSD, setXBTUSD] = useState(true);
   const [ticketSelected, setTicketSelected] = useState(ticketOptionsXBT[0]);
   let websocket = useRef<WebSocket>();
-  let orgData = useRef({ bids: {}, asks: {} })
+  let orgData = useRef<PriceList>({ bids: {}, asks: {} })
   let updateDataList = useRef(new Array());
   let throwerror = useRef(true)
   let funcProcData: () => void
-
-  const ticketSelectStyles: StylesConfig<TicketOptionType, false> = {
-    control: (provided) => ({
-      ...provided,
-      width: 140,
-      background: "#374151",
-      borderRadius: 5,
-      border: 0,
-      boxShadow: 'none',
-    }),
-    singleValue: (provided) => ({
-      ...provided,
-      color: 'white'
-    }),
-    indicatorSeparator: (provided) => ({ ...provided, display: "none" }),
-  };
 
   const connWebSocket = () => {
     websocket.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
@@ -215,7 +216,7 @@ function App() {
     setTicketSelected(selectedOption);
   }
 
-  const funcReceiveData = (data: any) => {
+  const funcReceiveData = (data: FeedData) => {
     // console.log("e", data);
     if (data.feed === "book_ui_1_snapshot") {
       orgData.current = { bids: {}, asks: {} }
@@ -235,22 +236,22 @@ function App() {
     let dataList = [...updateDataList.current]
     updateDataList.current = []
 
-    let newBidsData: { [key: string]: any } = { ...orgData.current.bids }
-    let newAsksData: { [key: string]: any } = { ...orgData.current.asks }
+    let newBidsData: PriceItem = { ...orgData.current.bids }
+    let newAsksData: PriceItem = { ...orgData.current.asks }
 
-    dataList.forEach((data: any) => {
-      data.bids.forEach((item: any) => {
+    dataList.forEach((data: FeedData) => {
+      data.bids.forEach((item: number[]) => {
         if (item[1] === 0)
-          delete newBidsData[parseFloat(item[0]).toFixed(2)]
+          delete newBidsData[item[0].toFixed(2)]
         else
-          newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
+          newBidsData = { ...newBidsData, [item[0].toFixed(2)]: { size: item[1] } }
       })
 
-      data.asks.forEach((item: any) => {
+      data.asks.forEach((item: number[]) => {
         if (item[1] === 0)
-          delete newAsksData[parseFloat(item[0]).toFixed(2)]
+          delete newAsksData[item[0].toFixed(2)]
         else
-          newAsksData = { ...newAsksData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
+          newAsksData = { ...newAsksData, [item[0].toFixed(2)]: { size: item[1] } }
       })
     })
 
@@ -261,17 +262,17 @@ function App() {
     setTicketFilterdData({ bids: sortfilteredBidsData, asks: sortfilteredAsksData })
   }
 
-  const funcTicketFilterData = (data: any) => {
-    let newData: any = {}
+  const funcTicketFilterData = (data: PriceItem) => {
+    let newData: PriceItem = {}
     let total = 0
 
     Object.keys(data).forEach(key => {
-      total += data[key].size
+      total += (data[key] as SizeBox).size
       let nearestPrice = (Math.floor(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
       if (newData[nearestPrice] === undefined)
-        newData[nearestPrice] = { size: data[key].size }
+        newData[nearestPrice] = { size: (data[key] as SizeBox).size }
       else
-        newData[nearestPrice] = { size: newData[nearestPrice].size + data[key].size }
+        newData[nearestPrice] = { size: (newData[nearestPrice] as SizeBox).size + (data[key] as SizeBox).size }
     })
 
     newData = { ...newData, total: total }
