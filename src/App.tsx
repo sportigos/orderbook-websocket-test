@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import styled from "@emotion/styled";
 import PriceTable from './components/PriceTable';
 import Select, { StylesConfig } from 'react-select'
-import { PriceItem, SizeBox, PriceList, FeedData } from './interfaces';
+import { PriceItem, SizeBox, PriceList, FeedData } from './Interfaces';
 
 const Section = styled.div`
   height: 100vh;

@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import TableRow from './TableRow';
-import {SizeBox, PriceItem} from '../interfaces'
+import {SizeBox, PriceItem} from '../Interfaces'
 
 interface PriceTableProps {
   tbltype?: string;
