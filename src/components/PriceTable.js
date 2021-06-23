@@ -22,7 +22,7 @@ function PriceTable({ type, data }) {
   return (
     <TablePage type={type}>
       <TableRow
-        type={type}
+        tbltype={type}
         header={true}
         value={{
           price: "PRICE",
@@ -39,7 +39,7 @@ function PriceTable({ type, data }) {
               (
                 <div key={key}>
                   <TableRow
-                    type={type}
+                    tbltype={type}
                     value={{
                       price: key,
                       size: data[key].size,
