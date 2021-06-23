@@ -1,8 +1,8 @@
 import './App.css';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, CSSProperties } from 'react';
 import styled from "@emotion/styled";
 import PriceTable from './components/PriceTable';
-import Select from 'react-select'
+import Select, { StylesConfig } from 'react-select'
 
 const Section = styled.div`
   height: 100vh;
@@ -90,13 +90,18 @@ const Button = styled.button`
   }
 `;
 
-const ticketOptionsXBT = [
+type MyOptionType = {
+  label: string;
+  value: number;
+};
+
+const ticketOptionsXBT: MyOptionType[] = [
   { value: 0.5, label: 'Group 0.5' },
   { value: 1.0, label: 'Group 1.0' },
   { value: 2.5, label: 'Group 2.5' }
 ]
 
-const ticketOptionsETH = [
+const ticketOptionsETH: MyOptionType[] = [
   { value: 0.05, label: 'Group 0.05' },
   { value: 0.1, label: 'Group 0.1' },
   { value: 0.25, label: 'Group 0.25' }
@@ -108,13 +113,14 @@ function App() {
   const [ticketFilterdData, setTicketFilterdData] = useState({ bids: {}, asks: {} });
   const [bXBTUSD, setXBTUSD] = useState(true);
   const [ticketSelected, setTicketSelected] = useState(ticketOptionsXBT[0]);
-  const websocket = useRef(null);
+  // let websocket = useRef<WebSocket>(null);
+  let websocket: WebSocket;
   let orgData = useRef({ bids: {}, asks: {} })
-  let updateDataList = useRef([]);
+  let updateDataList = useRef(new Array());
   let throwerror = useRef(true)
-  let funcProcData = null
+  let funcProcData: () => void
 
-  const ticketSelectStyles = {
+  const ticketSelectStyles: StylesConfig<MyOptionType, false> = {
     control: (provided) => ({
       ...provided,
       width: 140,
@@ -127,20 +133,20 @@ function App() {
       ...provided,
       color: 'white'
     }),
-    indicatorSeparator: styles => ({ ...styles, display: "none" }),
+    indicatorSeparator: (styles) => ({ ...styles, display: "none" }),
   };
 
   const connWebSocket = () => {
-    websocket.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
-    websocket.current.onopen = () => {
+    websocket = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
+    websocket.onopen = () => {
       console.log("ws opened");
-      websocket.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
+      websocket.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}');
     }
-    websocket.current.onclose = () => console.log("ws closed");
-    websocket.current.onerror = (event) => {
+    websocket.onclose = () => console.log("ws closed");
+    websocket.onerror = (event) => {
       console.error("WebSocket error observed:", event);
     };
-    websocket.current.onmessage = e => {
+    websocket.onmessage = e => {
       const message = JSON.parse(e.data);
 
       if (message.event === "subscribed")
@@ -152,24 +158,26 @@ function App() {
     };
 
     return () => {
-      websocket.current.close();
+      websocket.close();
     };
   }
 
   useEffect(connWebSocket, []);
 
   useEffect(() => {
-    if (websocket.current.readyState === WebSocket.OPEN) {
+    if (websocket == undefined)
+      return
+    if (websocket.readyState === WebSocket.OPEN) {
       if (subscribed === false && bXBTUSD === true)
-        websocket.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+        websocket.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
       else if (subscribed === false && bXBTUSD === false)
-        websocket.current.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+        websocket.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
     }
   }, [subscribed, bXBTUSD]);
 
   useEffect(() => {
     funcProcData()
-  }, [needUpdate, ticketSelected, funcProcData]);
+  }, [needUpdate, ticketSelected]);
 
   useEffect(() => {
     const interval = setInterval(() => { setNeedUpdate({ update: true }) }, 3 * 1000);
@@ -178,10 +186,10 @@ function App() {
 
   const onToggleFeed = () => {
     if (bXBTUSD === true) {
-      websocket.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
+      websocket.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
       setTicketSelected(ticketOptionsETH[0]);
     } else {
-      websocket.current.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
+      websocket.send('{"event":"unsubscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
       setTicketSelected(ticketOptionsXBT[0]);
     }
 
@@ -190,9 +198,9 @@ function App() {
 
   const onKillFeed = () => {
     if (throwerror.current === true) {
-      websocket.current.close()
-      websocket.current = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
-      websocket.current.onerror = (event) => {
+      websocket.close()
+      websocket = new WebSocket("wss://www.cryptofacilities.com/wsssss/v1");
+      websocket.onerror = (event) => {
         console.error("WebSocket error observed:", event);
       };
     } else {
@@ -201,11 +209,11 @@ function App() {
     throwerror.current = !throwerror.current
   }
 
-  const onTicketSelChange = selectedOption => {
+  const onTicketSelChange = (selectedOption: any) => {
     setTicketSelected(selectedOption);
   }
 
-  const funcReceiveData = (data) => {
+  const funcReceiveData = (data: any) => {
     // console.log("e", data);
     if (data.feed === "book_ui_1_snapshot") {
       orgData.current = { bids: {}, asks: {} }
@@ -225,18 +233,18 @@ function App() {
     let dataList = [...updateDataList.current]
     updateDataList.current = []
 
-    let newBidsData = { ...orgData.current.bids }
-    let newAsksData = { ...orgData.current.asks }
+    let newBidsData: { [key: string]: any } = { ...orgData.current.bids }
+    let newAsksData: { [key: string]: any } = { ...orgData.current.asks }
 
-    dataList.forEach(data => {
-      data.bids.forEach(item => {
+    dataList.forEach((data: any) => {
+      data.bids.forEach((item: any) => {
         if (item[1] === 0)
           delete newBidsData[parseFloat(item[0]).toFixed(2)]
         else
           newBidsData = { ...newBidsData, [parseFloat(item[0]).toFixed(2)]: { size: item[1] } }
       })
 
-      data.asks.forEach(item => {
+      data.asks.forEach((item: any) => {
         if (item[1] === 0)
           delete newAsksData[parseFloat(item[0]).toFixed(2)]
         else
@@ -251,13 +259,13 @@ function App() {
     setTicketFilterdData({ bids: sortfilteredBidsData, asks: sortfilteredAsksData })
   }
 
-  const funcTicketFilterData = (data) => {
-    let newData = {}
+  const funcTicketFilterData = (data: any) => {
+    let newData: any = {}
     let total = 0
 
     Object.keys(data).forEach(key => {
       total += data[key].size
-      let nearestPrice = parseFloat(parseInt(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
+      let nearestPrice = (Math.floor(parseFloat(key) / ticketSelected.value) * ticketSelected.value).toFixed(2)
       if (newData[nearestPrice] === undefined)
         newData[nearestPrice] = { size: data[key].size }
       else
