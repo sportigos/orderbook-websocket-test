@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import styled from "@emotion/styled";
 import PriceTable from './components/PriceTable';
 import Select, { StylesConfig } from 'react-select'
-import { PriceItem, SizeBox, PriceList, FeedData } from './Interfaces';
+import { TicketOptionType, PriceItem, SizeBox, PriceList, FeedData } from './Interfaces';
 
 const Section = styled.div`
   height: 100vh;
@@ -91,11 +91,6 @@ const Button = styled.button`
   }
 `;
 
-interface TicketOptionType {
-  label: string;
-  value: number;
-};
-
 const ticketOptionsXBT: TicketOptionType[] = [
   { value: 0.5, label: 'Group 0.5' },
   { value: 1.0, label: 'Group 1.0' },
@@ -132,9 +127,8 @@ function App() {
   const [ticketSelected, setTicketSelected] = useState(ticketOptionsXBT[0]);
   let websocket = useRef<WebSocket>();
   let orgData = useRef<PriceList>({ bids: {}, asks: {} })
-  let updateDataList = useRef(new Array());
+  let updateDataList = useRef<FeedData[]>([]);
   let throwerror = useRef(true)
-  let funcProcData: () => void
 
   const connWebSocket = () => {
     websocket.current = new WebSocket("wss://www.cryptofacilities.com/ws/v1");
@@ -167,6 +161,11 @@ function App() {
   useEffect(connWebSocket, []);
 
   useEffect(() => {
+    const interval = setInterval(() => { setNeedUpdate({ update: true }) }, 3 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     if (websocket.current?.readyState === WebSocket.OPEN) {
       if (subscribed === false && bXBTUSD === true)
         websocket.current?.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_XBTUSD"]}')
@@ -174,15 +173,6 @@ function App() {
         websocket.current?.send('{"event":"subscribe","feed":"book_ui_1","product_ids":["PI_ETHUSD"]}')
     }
   }, [subscribed, bXBTUSD]);
-
-  useEffect(() => {
-    funcProcData()
-  }, [needUpdate, ticketSelected]);
-
-  useEffect(() => {
-    const interval = setInterval(() => { setNeedUpdate({ update: true }) }, 3 * 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const onToggleFeed = () => {
     if (bXBTUSD === true) {
@@ -232,7 +222,7 @@ function App() {
     }
   }
 
-  funcProcData = () => {
+  const funcProcData = () => {
     let dataList = [...updateDataList.current]
     updateDataList.current = []
 
@@ -279,6 +269,10 @@ function App() {
 
     return newData
   }
+
+  useEffect(() => {
+    funcProcData()
+  }, [needUpdate, ticketSelected]);
 
   return (
     <Section>

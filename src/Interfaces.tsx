@@ -1,3 +1,8 @@
+export interface TicketOptionType {
+  label: string;
+  value: number;
+};
+
 export interface SizeBox {
   size: number
 }
