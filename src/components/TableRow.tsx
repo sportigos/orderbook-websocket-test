@@ -3,12 +3,12 @@ import styled from "@emotion/styled";
 interface TableRowProps {
   tbltype?: string;
   header?: boolean;
-  value?: {total: number | string, size: number | string, price: number | string, percent: any};
+  value?: {total: number | string, size: number | string, price: number | string, percent: number};
   celltype?: string;
 }
 
 interface VisualizeBarProps extends TableRowProps {
-  percent: string;
+  percent?: number;
 }
 
 const TblRowWrapper = styled.div<TableRowProps>`
@@ -36,7 +36,7 @@ const VisualizeBar = styled.div<VisualizeBarProps>`
       right: ${(p) => p.tbltype === "bid" ? "0" : "auto"};
       left: ${(p) => p.tbltype === "bid" ? "auto" : "0"};
     }
-    width: ${(p) => `${parseInt(p.percent)}%`};
+    width: ${(p) => `${p.percent}%`};
   }
 `;
 

@@ -1,9 +1,10 @@
 import styled from "@emotion/styled";
 import TableRow from './TableRow';
+import {SizeBox, PriceData} from '../interfaces'
 
 interface PriceTableProps {
   tbltype?: string;
-  data?: any
+  data?: PriceData
 }
 
 const TablePage = styled.div<PriceTableProps>`
@@ -38,7 +39,7 @@ const PriceTable: React.FC<PriceTableProps> = ({ tbltype, data }) => {
       </TableRow>
       <DataWrapper tbltype={tbltype}>
         {data && Object.keys(data).sort().map(key => {
-          sum += data[key].size
+          sum += (data[key] as SizeBox).size
           return (
             key === "total" ? '' :
               (
@@ -47,9 +48,9 @@ const PriceTable: React.FC<PriceTableProps> = ({ tbltype, data }) => {
                     tbltype={tbltype}
                     value={{
                       price: key,
-                      size: data[key].size,
+                      size: (data[key] as {size: number}).size,
                       total: sum,
-                      percent: Math.max(sum * 100 / data.total, 1)
+                      percent: Math.round(Math.max(sum * 100 / (data.total as number), 1))
                     }}>
                   </TableRow>
                 </div>
